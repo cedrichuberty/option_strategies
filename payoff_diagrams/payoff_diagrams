@@ -1,0 +1,195 @@
+### Payoff diagrams of different option strategies ###
+### (see section 3.9 in the "Certified Exchange    ###
+### Trader Eurex" Manual)                          ###
+
+
+
+### Profit and loss calculation of long/short positions on calls/puts ###
+
+pnl <- function(S,E,P,call=TRUE,long=TRUE){
+  p <- rep(0,length(S))
+  if (long==TRUE){
+    for (i in 1:length(S)) {
+      p[i] <- ifelse(call,max(S[i]-E,0),max(E-S[i],0)) - P
+    }
+  }
+  else{
+    for (i in 1:length(S)) {
+      p[i] <- P - ifelse(call,max(S[i]-E,0),max(E-S[i],0))
+    }
+  }
+  return(p)
+}
+
+### Call ###
+
+call_pnl <- function(E,C,long=TRUE){
+  position1 <- pnl(0:(2*E),E,C,TRUE,long)
+  risk <- min(position1)
+  income <- max(position1)
+  title <- ifelse(long,paste("Long call with Strike =",E),paste("Short call with Strike =",E))
+  plot(position1,type = "l",ylim = c(-2*abs(risk),2*abs(income)),col="green",main=title,xlab="Spot price",ylab="PnL",xaxt="n")
+  lines(rep(0,length(position1)))
+  axis(1,seq(0,2*E,10),las=2)
+  ifelse(long,paste("Maximum risk: ",risk,", Maximum income: ",Inf,sep = ""),paste("Maximum risk: ",Inf,", Maximum income: ",income,sep = ""))
+}
+
+### Put ###
+
+put_pnl <- function(E,P,long=TRUE){
+  position1 <- pnl(0:(2*E),E,P,FALSE,long)
+  risk <- min(position1)
+  income <- max(position1)
+  title <- ifelse(long,paste("Long put with Strike =",E),paste("Short put with Strike =",E))
+  plot(position1,type = "l",ylim = c(-2*abs(risk),2*abs(income)),col="green",main=title,xlab="Spot price",ylab="PnL",xaxt="n")
+  lines(rep(0,length(position1)))
+  axis(1,seq(0,2*E,10),las=2)
+  paste("Maximum risk: ",risk,", Maximum income: ",income,sep = "")
+}
+
+### Bull call spread and Bear call spread ###
+
+call_spread <- function(E1,E2,C1,C2,bull=TRUE){
+  if (E1>=E2){stop("E1 >= E2")}
+  position1 <- pnl(0:(2*E2),E1,C1,TRUE,bull)
+  position2 <- pnl(0:(2*E2),E2,C2,TRUE,!(bull))
+  risk <- min(position1+position2)
+  income <- max(position1+position2)
+  title <- ifelse(bull,paste("Bull call spread with strikes E1 =",E1,"and E2 =",E2),paste("Bear call spread with strikes E1 =",E1,"and E2 =",E2))
+  plot(position1,type = "l",col="blue",main=title,ylim = c(-2*abs(risk),2*abs(income)),xlab="Spot price",ylab="PnL",xaxt="n")  
+  lines(position2,col="red")
+  lines(position1+position2,col="green")
+  lines(rep(0,length(position1)))
+  ifelse(bull,leg <- c("Long call","Short call","Bull call spread"),leg <- c("Short call","Long call","Bear call spread"))
+  legend(0,2*abs(income),legend = leg,fill = c("blue","red","green"))
+  axis(1,seq(0,(2*E2),10),las=2)
+  paste("Maximum risk: ",risk,", Maximum income: ",income,sep = "")
+}
+
+### Bull put spread and Bear put spread ###
+
+put_spread <- function(E1,E2,P1,P2,bull=TRUE){
+  if (E1>=E2){stop("E1 >= E2")}
+  position1 <- pnl(0:(2*E2),E1,P1,FALSE,bull)
+  position2 <- pnl(0:(2*E2),E2,P2,FALSE,!(bull))
+  risk <- min(position1+position2)
+  income <- max(position1+position2)
+  title <- ifelse(bull,paste("Bull put spread with strikes E1 =",E1,"and E2 =",E2),paste("Bear put spread with strikes E1 =",E1,"and E2 =",E2))
+  plot(position1,type = "l",col="blue",main=title,ylim = c(-2*abs(risk),2*abs(income)),xlab="Spot price",ylab="PnL",xaxt="n")  
+  lines(position2,col="red")
+  lines(position1+position2,col="green")
+  lines(rep(0,length(position1)))
+  ifelse(bull,leg <- c("Long put","Short put","Bull put spread"),leg <- c("Short put","Long put","Bear put spread"))
+  legend(0,2*abs(income),legend = leg,fill = c("blue","red","green"))
+  axis(1,seq(0,(2*E2),10),las=2)
+  paste("Maximum risk: ",risk,", Maximum income: ",income,sep = "")
+}
+
+### Straddle ###
+
+straddle <- function(E,C,P,long=TRUE){
+  position1 <- pnl(0:(2*E),E,C,TRUE,long) 
+  position2 <- pnl(0:(2*E),E,P,FALSE,long)
+  risk <- min(position1+position2)
+  income <- max(position1+position2)
+  y <- max(C,P)
+  title <- ifelse(long,paste("Long straddle with strike E =",E),paste("Short straddle with strike E =",E))
+  plot(position1,type = "l",col="blue",main=title,ylim = c(-2*y,2*y),xlab="Spot price",ylab="PnL",xaxt="n")  
+  lines(position2,col="red")
+  lines(position1+position2,col="green")
+  lines(rep(0,length(position1)))
+  ifelse(long,leg <- c("Long call","Long put","Long straddle"),leg <- c("Short call","Short put","Short straddle"))
+  legend(0,2*y,legend = leg,fill = c("blue","red","green"))
+  axis(1,seq(0,(2*E),10),las=2)
+  ifelse(long,paste("Maximum risk: ",risk,", Maximum income: ",Inf,sep = ""),paste("Maximum risk: ",Inf,", Maximum income: ",income,sep = ""))
+}
+
+### Strangle ###
+
+strangle <- function(E1,E2,C,P,long=TRUE){
+  E <- max(E1,E2)
+  position1 <- pnl(0:(2*E),E1,C,TRUE,long) 
+  position2 <- pnl(0:(2*E),E2,P,FALSE,long)
+  risk <- min(position1+position2)
+  income <- max(position1+position2)
+  y <- max(C,P)
+  title <- ifelse(long,paste("Long strangle with call strike E1 =",E1,"and put strike E2 =",E2),paste("Short strangle with call strike E1 =",E1,"and put strike E2 =",E2))
+  plot(position1,type = "l",col="blue",main=title,ylim = c(-2*y,2*y),xlab="Spot price",ylab="PnL",xaxt="n")  
+  lines(position2,col="red")
+  lines(position1+position2,col="green")
+  lines(rep(0,length(position1)))
+  ifelse(long,leg <- c("Long call","Long put","Long strangle"),leg <- c("Short call","Short put","Short strangle"))
+  legend(0,2*y,legend = leg,fill = c("blue","red","green"))
+  axis(1,seq(0,(2*E),10),las=2)
+  ifelse(long,paste("Maximum risk: ",risk,", Maximum income: ",Inf,sep = ""),paste("Maximum risk: ",Inf,", Maximum income: ",income,sep = ""))
+}
+
+### Butterfly ###
+
+butterfly <- function(E1,E2,E3,P1,P2,P3,call=TRUE,long=TRUE){
+  if ((E1<E2) && (E2<E3)){
+    position1 <- pnl(0:(2*E3),E1,P1,call,long)
+    position2 <- 2*pnl(0:(2*E3),E2,P2,call,!(long))
+    position3 <- pnl(0:(2*E3),E3,P3,call,long)
+    risk <- min(position1+position2+position3)
+    income <- max(position1+position2+position3)
+    if (long==TRUE){
+      if (call==TRUE){
+        title <- paste("Long call butterfly with strikes E1 = ",E1,", E2 = ",E2," and E3 = ",E3,sep = "")
+        leg <- c("Long call","Short 2 calls","Long call","Long call butterfly")
+        }
+      else{
+        title <- paste("Long put butterfly with strikes E1 = ",E1,", E2 = ",E2," and E3 = ",E3,sep = "")
+        leg <- c("Long put","Short 2 puts","Long put","Long put butterfly")
+        }
+    }
+    else{
+      if (call==TRUE){
+        title <- paste("Short call butterfly with strikes E1 = ",E1,", E2 = ",E2," and E3 = ",E3,sep = "")
+        leg <- c("Short call","Long 2 calls","Short call","Short call butterfly")
+        }
+      else{
+        title <- paste("Short put butterfly with strikes E1 = ",E1,", E2 = ",E2," and E3 = ",E3,sep = "")
+        leg <- c("Short put","Long 2 puts","Short put","Short put butterfly")
+        }
+    }
+    plot(position1,type = "l",col="blue",main=title,ylim = c(-2*abs(risk),2*abs(income)),xlab="Spot price",ylab="PnL",xaxt="n")  
+    lines(position2,col="purple")
+    lines(position3,col="red")
+    lines(position1+position2+position3,col="green")
+    lines(rep(0,length(position1)))
+    legend(0,2*abs(income),legend = leg,fill = c("blue","purple","red","green"))
+    axis(1,seq(0,(2*E3),10),las=2)
+    paste("Maximum risk: ",risk,", Maximum income: ",income,sep = "")
+  }
+  else{stop("E1>=E2 or E2>=E3")}
+}
+
+### Box ###
+
+box_trade <- function(E1,E2,C1,C2,P1,P2,long=TRUE){
+  if (E1>=E2){stop("E1 >= E2")}
+  position1 <- pnl(0:(2*E2),E1,C1,TRUE,long)
+  position2 <- pnl(0:(2*E2),E1,P1,FALSE,!(long))
+  position3 <- pnl(0:(2*E2),E2,C2,TRUE,!(long))
+  position4 <- pnl(0:(2*E2),E2,P2,FALSE,long)
+  risk <- min(position1+position2+position3+position4)
+  income <- max(position1+position2+position3+position4)
+  if (long==TRUE){
+    title <- paste("Long box with strikes E1 =",E1," and E2 =",E2)
+    leg <- c("Long call","Short put","Short call","Long put","Long box")
+  }
+  else{
+    title <- paste("Short box with strikes E1 =",E1," and E2 =",E2)
+    leg <- c("Short call","Long put","Long call","Short put","Short box")
+  }
+  plot(position1,type = "l",col="blue",main=title,ylim = c(-2*abs(risk),2*abs(income)),xlab="Spot price",ylab="PnL",xaxt="n")  
+  lines(position2,col="purple")
+  lines(position3,col="orange")
+  lines(position4,col="red")
+  lines(position1+position2+position3+position4,col="green")
+  lines(rep(0,length(position1)))
+  legend(0,2*abs(income),legend = leg,fill = c("blue","purple","orange","red","green"))
+  axis(1,seq(0,(2*E2),10),las=2)
+  paste("Maximum risk: ",risk,", Maximum income: ",income,sep = "")
+}
